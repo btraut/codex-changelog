@@ -18,22 +18,44 @@ function truncateFeature(feature: string): string {
   return feature.slice(0, MAX_FEATURE_LENGTH - 3) + "...";
 }
 
-function buildHeader(version: string): string {
-  return `🚀 Codex v${version} released!`;
+function formatVersion(version: string): string {
+  // Convert "0.92.0" to "0.92" (drop patch if .0)
+  const parts = version.split('.');
+  if (parts.length === 3 && parts[2] === '0') {
+    return `${parts[0]}.${parts[1]}`;
+  }
+  return version;
 }
 
-function buildUrlLine(releaseUrl: string): string {
-  return `Full release notes: ${releaseUrl}`;
-}
-
-function buildAlsoLine(counts: SectionCounts): string {
+function buildSummaryTweet(
+  version: string,
+  featureCount: number,
+  counts: SectionCounts
+): string {
   const parts: string[] = [];
+  if (featureCount > 0) parts.push(`${featureCount} feature${featureCount > 1 ? 's' : ''}`);
   if (counts.bugFixes > 0) parts.push(`${counts.bugFixes} bug fix${counts.bugFixes > 1 ? 'es' : ''}`);
   if (counts.docs > 0) parts.push(`${counts.docs} doc${counts.docs > 1 ? 's' : ''}`);
   if (counts.chores > 0) parts.push(`${counts.chores} chore${counts.chores > 1 ? 's' : ''}`);
 
-  if (parts.length === 0) return '';
-  return `Also: ${parts.join(', ')}`;
+  // Format as "X, Y, Z, and W" or "X, Y, and Z" etc.
+  let countLine: string;
+  if (parts.length === 0) {
+    countLine = "Minor updates.";
+  } else if (parts.length === 1) {
+    countLine = `${parts[0]}.`;
+  } else if (parts.length === 2) {
+    countLine = `${parts[0]} and ${parts[1]}.`;
+  } else {
+    const last = parts.pop();
+    countLine = `${parts.join(', ')}, and ${last}.`;
+  }
+
+  return `Codex ${formatVersion(version)} is out.\n\n${countLine}\n\nDetails in thread ↓`;
+}
+
+function buildUrlLine(releaseUrl: string): string {
+  return `Full notes: ${releaseUrl}`;
 }
 
 function buildSingleTweet(
@@ -42,22 +64,26 @@ function buildSingleTweet(
   releaseUrl: string,
   counts: SectionCounts
 ): string {
-  const header = buildHeader(version);
-  const urlLine = buildUrlLine(releaseUrl);
-  const alsoLine = buildAlsoLine(counts);
+  // For single tweet, use summary format but with URL instead of "Details in thread"
+  const parts: string[] = [];
+  if (features.length > 0) parts.push(`${features.length} feature${features.length > 1 ? 's' : ''}`);
+  if (counts.bugFixes > 0) parts.push(`${counts.bugFixes} bug fix${counts.bugFixes > 1 ? 'es' : ''}`);
+  if (counts.docs > 0) parts.push(`${counts.docs} doc${counts.docs > 1 ? 's' : ''}`);
+  if (counts.chores > 0) parts.push(`${counts.chores} chore${counts.chores > 1 ? 's' : ''}`);
 
-  if (features.length === 0) {
-    if (alsoLine) {
-      return `${header}\n\n${alsoLine}\n\n${urlLine}`;
-    }
-    return `${header}\n\n${urlLine}`;
+  let countLine: string;
+  if (parts.length === 0) {
+    countLine = "Minor updates.";
+  } else if (parts.length === 1) {
+    countLine = `${parts[0]}.`;
+  } else if (parts.length === 2) {
+    countLine = `${parts[0]} and ${parts[1]}.`;
+  } else {
+    const last = parts.pop();
+    countLine = `${parts.join(', ')}, and ${last}.`;
   }
 
-  const featureList = features.map((f) => `• ${f}`).join("\n");
-  if (alsoLine) {
-    return `${header}\n\nNew Features:\n${featureList}\n\n${alsoLine}\n\n${urlLine}`;
-  }
-  return `${header}\n\nNew Features:\n${featureList}\n\n${urlLine}`;
+  return `Codex ${formatVersion(version)} is out.\n\n${countLine}\n\n${buildUrlLine(releaseUrl)}`;
 }
 
 export function formatTweets(
@@ -68,87 +94,57 @@ export function formatTweets(
 ): TweetThread {
   const truncatedFeatures = features.map(truncateFeature);
 
-  // Try single tweet first
+  // Try single tweet first (no feature details, just summary)
   const singleTweet = buildSingleTweet(version, truncatedFeatures, releaseUrl, counts);
-  if (singleTweet.length <= MAX_TWEET_LENGTH) {
+  if (singleTweet.length <= MAX_TWEET_LENGTH && truncatedFeatures.length <= 2) {
     return { tweets: [singleTweet] };
   }
 
-  // Need to create a thread - first pass to determine structure
-  const header = buildHeader(version);
+  // Need to create a thread
   const urlLine = buildUrlLine(releaseUrl);
-  const alsoLine = buildAlsoLine(counts);
-
-  // Build the footer for the last tweet
-  const lastTweetFooter = alsoLine ? `${alsoLine}\n\n${urlLine}` : urlLine;
+  const numberingSuffix = " (XX/XX)"; // 8 chars placeholder
 
   // Build tweet contents without numbering first
   const tweetContents: string[] = [];
+
+  // First tweet: summary
+  tweetContents.push(buildSummaryTweet(version, truncatedFeatures.length, counts));
+
   let remainingFeatures = [...truncatedFeatures];
 
-  // First tweet: header + as many features as fit
-  // Reserve space for " (1/N)" where N could be up to 2 digits = 7 chars
-  const numberingSuffix = " (XX/XX)"; // 8 chars placeholder
-
-  let firstTweetContent = `${header}\n\nNew Features:`;
-  let featuresInFirst: string[] = [];
-
-  for (const feature of remainingFeatures) {
-    const featureLine = `• ${feature}`;
-    const currentFeatures = featuresInFirst.length > 0
-      ? featuresInFirst.map((f) => `• ${f}`).join("\n") + "\n"
-      : "";
-    const testContent = `${firstTweetContent}\n${currentFeatures}${featureLine}${numberingSuffix}`;
-
-    if (testContent.length <= MAX_TWEET_LENGTH) {
-      featuresInFirst.push(feature);
-    } else {
-      break;
-    }
-  }
-
-  if (featuresInFirst.length > 0) {
-    const featureLines = featuresInFirst.map((f) => `• ${f}`).join("\n");
-    tweetContents.push(`${firstTweetContent}\n${featureLines}`);
-  } else {
-    tweetContents.push(firstTweetContent);
-  }
-
-  remainingFeatures = remainingFeatures.slice(featuresInFirst.length);
-
-  // Middle and last tweets
+  // Feature tweets
   let footerAdded = false;
   while (remainingFeatures.length > 0) {
-    // Check if remaining features + footer can fit in one tweet (this would be the last tweet)
+    // Check if remaining features + URL can fit in one tweet (this would be the last tweet)
     const remainingFeatureLines = remainingFeatures.map((f) => `• ${f}`).join("\n");
-    const lastTweetCandidate = `${remainingFeatureLines}\n\n${lastTweetFooter}${numberingSuffix}`;
+    const lastTweetCandidate = `${remainingFeatureLines}\n\n${urlLine}${numberingSuffix}`;
 
     if (lastTweetCandidate.length <= MAX_TWEET_LENGTH) {
-      tweetContents.push(`${remainingFeatureLines}\n\n${lastTweetFooter}`);
+      tweetContents.push(`${remainingFeatureLines}\n\n${urlLine}`);
       footerAdded = true;
       break;
     }
 
-    // Need another middle tweet
-    let featuresInMiddle: string[] = [];
+    // Need another feature tweet
+    let featuresInTweet: string[] = [];
     for (const feature of remainingFeatures) {
       const featureLine = `• ${feature}`;
-      const currentLines = featuresInMiddle.length > 0
-        ? featuresInMiddle.map((f) => `• ${f}`).join("\n") + "\n"
+      const currentLines = featuresInTweet.length > 0
+        ? featuresInTweet.map((f) => `• ${f}`).join("\n") + "\n"
         : "";
       const testContent = `${currentLines}${featureLine}${numberingSuffix}`;
 
       if (testContent.length <= MAX_TWEET_LENGTH) {
-        featuresInMiddle.push(feature);
+        featuresInTweet.push(feature);
       } else {
         break;
       }
     }
 
-    if (featuresInMiddle.length > 0) {
-      const featureLines = featuresInMiddle.map((f) => `• ${f}`).join("\n");
+    if (featuresInTweet.length > 0) {
+      const featureLines = featuresInTweet.map((f) => `• ${f}`).join("\n");
       tweetContents.push(featureLines);
-      remainingFeatures = remainingFeatures.slice(featuresInMiddle.length);
+      remainingFeatures = remainingFeatures.slice(featuresInTweet.length);
     } else {
       // Edge case: single feature is too long even alone
       const featureLine = `• ${remainingFeatures[0]}`;
@@ -159,7 +155,7 @@ export function formatTweets(
 
   // If we exited the loop without adding footer, add it as final tweet
   if (!footerAdded) {
-    tweetContents.push(lastTweetFooter);
+    tweetContents.push(urlLine);
   }
 
   // Now add numbering to each tweet
