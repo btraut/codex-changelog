@@ -89,4 +89,57 @@ describe("parseNewFeatures", () => {
     expect(result.features).toEqual([]);
     expect(result.raw).toContain("## New Features");
   });
+
+  // HTML format tests (RSS feed)
+  it("extracts features from HTML format", () => {
+    const htmlBody = `<h2>New Features</h2>
+<ul>
+<li>API v2 threads can now inject dynamic tools at startup. (#9539)</li>
+<li>Multi-agent collaboration is more capable. (#9817, #9818)</li>
+</ul>
+<h2>Bug Fixes</h2>
+<ul><li>Fixed something</li></ul>`;
+
+    const result = parseNewFeatures(htmlBody);
+
+    expect(result.features).toEqual([
+      "API v2 threads can now inject dynamic tools at startup.",
+      "Multi-agent collaboration is more capable.",
+    ]);
+  });
+
+  it("handles HTML with nested tags in li", () => {
+    const htmlBody = `<h2>New Features</h2>
+<ul>
+<li><strong>Bold feature</strong> with extra text (#123)</li>
+<li>Feature with <code>code</code> inside (#456)</li>
+</ul>`;
+
+    const result = parseNewFeatures(htmlBody);
+
+    expect(result.features).toEqual([
+      "Bold feature with extra text",
+      "Feature with code inside",
+    ]);
+  });
+
+  it("returns empty for HTML without New Features section", () => {
+    const htmlBody = `<h2>Bug Fixes</h2>
+<ul><li>Fixed a bug</li></ul>`;
+
+    const result = parseNewFeatures(htmlBody);
+
+    expect(result.features).toEqual([]);
+  });
+
+  it("handles HTML New Features at end of document", () => {
+    const htmlBody = `<h2>Bug Fixes</h2>
+<ul><li>Fixed something</li></ul>
+<h2>New Features</h2>
+<ul><li>Last section feature (#789)</li></ul>`;
+
+    const result = parseNewFeatures(htmlBody);
+
+    expect(result.features).toEqual(["Last section feature"]);
+  });
 });

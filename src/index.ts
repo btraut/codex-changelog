@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { getLatestStableRelease } from './github.js';
+import { getLatestRelease } from './rss.js';
 import { parseNewFeatures } from './parser.js';
 import { formatTweets } from './formatter.js';
 import { createTwitterClient, postThread } from './twitter.js';
@@ -30,10 +30,10 @@ function writeLastPostedVersion(version: string): void {
 async function main(): Promise<void> {
   console.log('Checking for new Codex releases...');
 
-  // Fetch latest stable release
-  const release = await getLatestStableRelease();
+  // Fetch latest release from RSS feed
+  const release = await getLatestRelease();
   if (!release) {
-    console.log('No stable release found');
+    console.log('No release found in RSS feed');
     return;
   }
 
