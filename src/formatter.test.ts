@@ -83,9 +83,9 @@ describe("formatTweets", () => {
   });
 
   describe("feature truncation", () => {
-    it("should truncate features longer than 50 characters with ellipsis", () => {
+    it("should truncate features longer than MAX_FEATURE_LENGTH with ellipsis", () => {
       const longFeature =
-        "This is a very long feature description that exceeds the maximum allowed length";
+        "This is a very long feature description that exceeds the maximum allowed length and keeps going on and on to ensure it is over 100 characters";
       expect(longFeature.length).toBeGreaterThan(MAX_FEATURE_LENGTH);
 
       const features = [longFeature];
@@ -104,7 +104,7 @@ describe("formatTweets", () => {
       }
     });
 
-    it("should not truncate features under 50 characters", () => {
+    it("should not truncate features under MAX_FEATURE_LENGTH", () => {
       const shortFeature = "Short feature";
       expect(shortFeature.length).toBeLessThan(MAX_FEATURE_LENGTH);
 
@@ -115,8 +115,8 @@ describe("formatTweets", () => {
       expect(result.tweets[0]).not.toContain("...");
     });
 
-    it("should truncate exactly at 50 characters including ellipsis", () => {
-      const exactlyLongFeature = "A".repeat(60);
+    it("should truncate exactly at MAX_FEATURE_LENGTH including ellipsis", () => {
+      const exactlyLongFeature = "A".repeat(120);
       const features = [exactlyLongFeature];
       const result = formatTweets(version, features, releaseUrl);
 
@@ -159,9 +159,10 @@ describe("formatTweets", () => {
     });
 
     it("should include URL in last tweet of thread", () => {
-      const features = Array(10)
+      // Use longer features to force a thread
+      const features = Array(8)
         .fill(null)
-        .map((_, i) => `Feature ${i + 1} with extra description text`);
+        .map((_, i) => `Feature ${i + 1} with a longer description that takes up more space in the tweet`);
       const result = formatTweets(version, features, releaseUrl);
 
       expect(result.tweets.length).toBeGreaterThan(1);
@@ -191,22 +192,19 @@ describe("formatTweets", () => {
   });
 
   describe("thread structure", () => {
-    it("should include continuation marker in non-final tweets", () => {
-      const features = Array(10)
+    it("should include numbering in thread tweets", () => {
+      const features = Array(8)
         .fill(null)
-        .map((_, i) => `Feature ${i + 1} with some description`);
+        .map((_, i) => `Feature ${i + 1} with a longer description that takes up more space`);
       const result = formatTweets(version, features, releaseUrl);
 
       expect(result.tweets.length).toBeGreaterThan(1);
 
-      // All tweets except the last should have continuation marker
-      for (let i = 0; i < result.tweets.length - 1; i++) {
-        expect(result.tweets[i]).toContain("(cont...)");
+      // All tweets should have (X/Y) numbering
+      const total = result.tweets.length;
+      for (let i = 0; i < total; i++) {
+        expect(result.tweets[i]).toContain(`(${i + 1}/${total})`);
       }
-
-      // Last tweet should not have continuation marker
-      const lastTweet = result.tweets[result.tweets.length - 1];
-      expect(lastTweet).not.toContain("(cont...)");
     });
 
     it("should start first tweet with header", () => {

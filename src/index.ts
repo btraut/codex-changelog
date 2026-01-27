@@ -48,12 +48,12 @@ async function main(): Promise<void> {
 
   console.log(`New release detected: v${release.version} (last posted: ${lastPosted ?? 'none'})`);
 
-  // Parse new features
-  const { features } = parseNewFeatures(release.body);
-  console.log(`Found ${features.length} new features`);
+  // Parse release notes
+  const { features, bugFixes, docs, chores } = parseNewFeatures(release.body);
+  console.log(`Found ${features.length} features, ${bugFixes} bug fixes, ${docs} docs, ${chores} chores`);
 
   // Format tweets
-  const { tweets } = formatTweets(release.version, features, release.url);
+  const { tweets } = formatTweets(release.version, features, release.url, { bugFixes, docs, chores });
   console.log(`Formatted into ${tweets.length} tweet(s)`);
 
   if (DRY_RUN) {
