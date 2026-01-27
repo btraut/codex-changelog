@@ -1,8 +1,8 @@
 # Codex Changelog Bot
 
-A Twitter bot that posts when new versions of [OpenAI Codex](https://github.com/openai/codex) are released.
+A Twitter (X) bot that posts when new versions of [OpenAI Codex](https://github.com/openai/codex) are released.
 
-Follow [@codexchangelog](https://twitter.com/codexchangelog) to stay up to date.
+Follow [@codexchangelog](https://x.com/codexchangelog) to stay up to date.
 
 ## How it works
 
