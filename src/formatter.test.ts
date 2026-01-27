@@ -20,12 +20,16 @@ describe("formatTweets", () => {
       expect(result.tweets[0]).toContain(releaseUrl);
     });
 
-    it("should show only feature count for single feature", () => {
+    it("should include all counts in single tweet", () => {
       const features = ["Feature A"];
-      const result = formatTweets(version, features, releaseUrl);
+      const counts = { bugFixes: 3, docs: 1, chores: 2 };
+      const result = formatTweets(version, features, releaseUrl, counts);
 
       expect(result.tweets).toHaveLength(1);
       expect(result.tweets[0]).toContain("1 feature");
+      expect(result.tweets[0]).toContain("3 bug fixes");
+      expect(result.tweets[0]).toContain("1 doc");
+      expect(result.tweets[0]).toContain("2 chores");
     });
   });
 
@@ -112,11 +116,12 @@ describe("formatTweets", () => {
   describe("empty features handling", () => {
     it("should handle empty features array gracefully", () => {
       const features: string[] = [];
-      const result = formatTweets(version, features, releaseUrl);
+      const counts = { bugFixes: 2, docs: 0, chores: 1 };
+      const result = formatTweets(version, features, releaseUrl, counts);
 
       expect(result.tweets).toHaveLength(1);
       expect(result.tweets[0]).toContain("Codex 0.92 is out.");
-      expect(result.tweets[0]).toContain("Minor updates.");
+      expect(result.tweets[0]).toContain("2 bug fixes");
       expect(result.tweets[0]).toContain(releaseUrl);
     });
 

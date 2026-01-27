@@ -32,11 +32,11 @@ async function postRelease(release: Release, client?: ReturnType<typeof createTw
   console.log(`\n--- Processing v${release.version} ---`);
 
   // Parse release notes
-  const { features } = parseNewFeatures(release.body);
-  console.log(`Found ${features.length} features`);
+  const { features, bugFixes, docs, chores } = parseNewFeatures(release.body);
+  console.log(`Found ${features.length} features, ${bugFixes} bug fixes, ${docs} docs, ${chores} chores`);
 
   // Format tweets
-  const { tweets } = formatTweets(release.version, features, release.url);
+  const { tweets } = formatTweets(release.version, features, release.url, { bugFixes, docs, chores });
   console.log(`Formatted into ${tweets.length} tweet(s)`);
 
   if (DRY_RUN) {
