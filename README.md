@@ -2,7 +2,7 @@
 
 A Twitter (X) bot that posts when new versions of [OpenAI Codex](https://github.com/openai/codex) are released.
 
-Follow [@codexchangelog](https://x.com/codexchangelog) to stay up to date.
+Follow [@CodexLog](https://x.com/CodexLog) to stay up to date.
 
 ## How it works
 
