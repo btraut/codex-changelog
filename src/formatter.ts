@@ -2,12 +2,6 @@ export interface TweetThread {
   tweets: string[];
 }
 
-export interface SectionCounts {
-  bugFixes: number;
-  docs: number;
-  chores: number;
-}
-
 export const MAX_TWEET_LENGTH = 280;
 export const MAX_FEATURE_LENGTH = 100;
 
@@ -29,27 +23,11 @@ function formatVersion(version: string): string {
 
 function buildSummaryTweet(
   version: string,
-  featureCount: number,
-  counts: SectionCounts
+  featureCount: number
 ): string {
-  const parts: string[] = [];
-  if (featureCount > 0) parts.push(`${featureCount} feature${featureCount > 1 ? 's' : ''}`);
-  if (counts.bugFixes > 0) parts.push(`${counts.bugFixes} bug fix${counts.bugFixes > 1 ? 'es' : ''}`);
-  if (counts.docs > 0) parts.push(`${counts.docs} doc${counts.docs > 1 ? 's' : ''}`);
-  if (counts.chores > 0) parts.push(`${counts.chores} chore${counts.chores > 1 ? 's' : ''}`);
-
-  // Format as "X, Y, Z, and W" or "X, Y, and Z" etc.
-  let countLine: string;
-  if (parts.length === 0) {
-    countLine = "Minor updates.";
-  } else if (parts.length === 1) {
-    countLine = `${parts[0]}.`;
-  } else if (parts.length === 2) {
-    countLine = `${parts[0]} and ${parts[1]}.`;
-  } else {
-    const last = parts.pop();
-    countLine = `${parts.join(', ')}, and ${last}.`;
-  }
+  const countLine = featureCount > 0
+    ? `${featureCount} feature${featureCount > 1 ? 's' : ''}.`
+    : "Minor updates.";
 
   return `Codex ${formatVersion(version)} is out.\n\n${countLine}\n\nDetails in thread ↓`;
 }
@@ -61,27 +39,11 @@ function buildUrlLine(releaseUrl: string): string {
 function buildSingleTweet(
   version: string,
   features: string[],
-  releaseUrl: string,
-  counts: SectionCounts
+  releaseUrl: string
 ): string {
-  // For single tweet, use summary format but with URL instead of "Details in thread"
-  const parts: string[] = [];
-  if (features.length > 0) parts.push(`${features.length} feature${features.length > 1 ? 's' : ''}`);
-  if (counts.bugFixes > 0) parts.push(`${counts.bugFixes} bug fix${counts.bugFixes > 1 ? 'es' : ''}`);
-  if (counts.docs > 0) parts.push(`${counts.docs} doc${counts.docs > 1 ? 's' : ''}`);
-  if (counts.chores > 0) parts.push(`${counts.chores} chore${counts.chores > 1 ? 's' : ''}`);
-
-  let countLine: string;
-  if (parts.length === 0) {
-    countLine = "Minor updates.";
-  } else if (parts.length === 1) {
-    countLine = `${parts[0]}.`;
-  } else if (parts.length === 2) {
-    countLine = `${parts[0]} and ${parts[1]}.`;
-  } else {
-    const last = parts.pop();
-    countLine = `${parts.join(', ')}, and ${last}.`;
-  }
+  const countLine = features.length > 0
+    ? `${features.length} feature${features.length > 1 ? 's' : ''}.`
+    : "Minor updates.";
 
   return `Codex ${formatVersion(version)} is out.\n\n${countLine}\n\n${buildUrlLine(releaseUrl)}`;
 }
@@ -89,13 +51,12 @@ function buildSingleTweet(
 export function formatTweets(
   version: string,
   features: string[],
-  releaseUrl: string,
-  counts: SectionCounts = { bugFixes: 0, docs: 0, chores: 0 }
+  releaseUrl: string
 ): TweetThread {
   const truncatedFeatures = features.map(truncateFeature);
 
   // Try single tweet first (no feature details, just summary)
-  const singleTweet = buildSingleTweet(version, truncatedFeatures, releaseUrl, counts);
+  const singleTweet = buildSingleTweet(version, truncatedFeatures, releaseUrl);
   if (singleTweet.length <= MAX_TWEET_LENGTH && truncatedFeatures.length <= 2) {
     return { tweets: [singleTweet] };
   }
@@ -108,7 +69,7 @@ export function formatTweets(
   const tweetContents: string[] = [];
 
   // First tweet: summary
-  tweetContents.push(buildSummaryTweet(version, truncatedFeatures.length, counts));
+  tweetContents.push(buildSummaryTweet(version, truncatedFeatures.length));
 
   let remainingFeatures = [...truncatedFeatures];
 

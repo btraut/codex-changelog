@@ -88,5 +88,51 @@ export async function getLatestRelease(fetchFn: typeof fetch = fetch): Promise<R
   }
 }
 
+export async function getAllReleases(fetchFn: typeof fetch = fetch): Promise<Release[]> {
+  try {
+    const response = await fetchFn(RSS_URL);
+    if (!response.ok) {
+      return [];
+    }
+
+    const xml = await response.text();
+    return parseRssItems(xml);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Compare semantic versions. Returns:
+ * - negative if a < b
+ * - 0 if a === b
+ * - positive if a > b
+ */
+function compareVersions(a: string, b: string): number {
+  const aParts = a.split('.').map(Number);
+  const bParts = b.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const aVal = aParts[i] ?? 0;
+    const bVal = bParts[i] ?? 0;
+    if (aVal !== bVal) return aVal - bVal;
+  }
+  return 0;
+}
+
+/**
+ * Get releases newer than a given version, sorted oldest to newest.
+ */
+export async function getReleasesNewerThan(
+  version: string,
+  fetchFn: typeof fetch = fetch
+): Promise<Release[]> {
+  const allReleases = await getAllReleases(fetchFn);
+
+  return allReleases
+    .filter(r => compareVersions(r.version, version) > 0)
+    .sort((a, b) => compareVersions(a.version, b.version));
+}
+
 // Export for testing
 export { parseRssItems, extractVersion };
