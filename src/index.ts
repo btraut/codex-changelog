@@ -33,7 +33,7 @@ async function postRelease(release: Release, client?: ReturnType<typeof createTw
 
   // Parse release notes
   const { features, bugFixes, docs, chores } = parseNewFeatures(release.body);
-  console.log(`Found ${features.length} features, ${bugFixes} bug fixes, ${docs} docs, ${chores} chores`);
+  console.log(`Found ${features.length} features, ${bugFixes.length} bug fixes, ${docs.length} docs, ${chores.length} chores`);
 
   // Format tweets
   const { tweets } = formatTweets(release.version, features, release.url, { bugFixes, docs, chores });

@@ -9,23 +9,33 @@ describe("formatTweets", () => {
   const version = "0.92.0";
   const releaseUrl = "https://github.com/openai/codex/releases/tag/v0.92.0";
 
-  describe("single tweet scenarios", () => {
-    it("should create single tweet for small releases", () => {
+  describe("basic structure", () => {
+    it("should always have title card as first tweet", () => {
       const features = ["New CLI command", "Bug fixes"];
       const result = formatTweets(version, features, releaseUrl);
 
-      expect(result.tweets).toHaveLength(1);
       expect(result.tweets[0]).toContain("Codex 0.92 is out.");
       expect(result.tweets[0]).toContain("2 features");
-      expect(result.tweets[0]).toContain(releaseUrl);
     });
 
-    it("should include all counts in single tweet", () => {
-      const features = ["Feature A"];
-      const counts = { bugFixes: 3, docs: 1, chores: 2 };
-      const result = formatTweets(version, features, releaseUrl, counts);
+    it("should always have CTA as last tweet", () => {
+      const features = ["Feature 1"];
+      const result = formatTweets(version, features, releaseUrl);
 
-      expect(result.tweets).toHaveLength(1);
+      const lastTweet = result.tweets[result.tweets.length - 1];
+      expect(lastTweet).toContain("Full notes:");
+      expect(lastTweet).toContain(releaseUrl);
+    });
+
+    it("should include all category counts in title", () => {
+      const features = ["Feature A"];
+      const items = {
+        bugFixes: ["Fix 1", "Fix 2", "Fix 3"],
+        docs: ["Doc 1"],
+        chores: ["Chore 1", "Chore 2"],
+      };
+      const result = formatTweets(version, features, releaseUrl, items);
+
       expect(result.tweets[0]).toContain("1 feature");
       expect(result.tweets[0]).toContain("3 bug fixes");
       expect(result.tweets[0]).toContain("1 doc");
@@ -33,154 +43,117 @@ describe("formatTweets", () => {
     });
   });
 
-  describe("thread scenarios", () => {
-    it("should create thread when many features", () => {
-      const features = [
-        "New interactive mode with enhanced UX",
-        "Improved error messages for debugging",
-        "Better performance optimizations",
-        "New API endpoints for integrations",
-        "Enhanced security features",
-      ];
+  describe("features section", () => {
+    it("should include Features: heading", () => {
+      const features = ["Feature 1", "Feature 2"];
       const result = formatTweets(version, features, releaseUrl);
 
-      expect(result.tweets.length).toBeGreaterThan(1);
-      // First tweet should be summary
-      expect(result.tweets[0]).toContain("Codex 0.92 is out.");
-      expect(result.tweets[0]).toContain("5 features");
-      expect(result.tweets[0]).toContain("Details in thread");
+      const featuresTweet = result.tweets.find((t) => t.startsWith("Features:"));
+      expect(featuresTweet).toBeDefined();
+      expect(featuresTweet).toContain("• Feature 1");
+      expect(featuresTweet).toContain("• Feature 2");
     });
 
-    it("should put features in subsequent tweets", () => {
-      const features = Array(6).fill(null).map((_, i) => `Feature ${i + 1} description`);
-      const result = formatTweets(version, features, releaseUrl);
-
-      expect(result.tweets.length).toBeGreaterThan(1);
-      // Features should be in tweets after the first
-      const laterTweets = result.tweets.slice(1).join(" ");
-      expect(laterTweets).toContain("• Feature 1");
-    });
-  });
-
-  describe("tweet length constraints", () => {
-    it("should never exceed 280 characters in any tweet", () => {
-      const features = Array(15)
-        .fill(null)
-        .map((_, i) => `This is feature number ${i + 1} with some extra text`);
-      const result = formatTweets(version, features, releaseUrl);
-
-      for (const tweet of result.tweets) {
-        expect(tweet.length).toBeLessThanOrEqual(MAX_TWEET_LENGTH);
-      }
-    });
-
-    it("should handle very long feature list without exceeding limits", () => {
-      const features = Array(20)
-        .fill(null)
-        .map((_, i) => `Feature ${i + 1}`);
-      const result = formatTweets(version, features, releaseUrl);
-
-      for (const tweet of result.tweets) {
-        expect(tweet.length).toBeLessThanOrEqual(MAX_TWEET_LENGTH);
-      }
-    });
-  });
-
-  describe("feature truncation", () => {
-    it("should truncate features longer than MAX_FEATURE_LENGTH with ellipsis", () => {
-      const longFeature =
-        "This is a very long feature description that exceeds the maximum allowed length and keeps going on and on to ensure it is over 100 characters";
-      expect(longFeature.length).toBeGreaterThan(MAX_FEATURE_LENGTH);
-
-      const features = [longFeature, "Short feature", "Another one"];
-      const result = formatTweets(version, features, releaseUrl);
-
-      // In thread, features appear in later tweets
-      const allText = result.tweets.join(" ");
-      expect(allText).not.toContain(longFeature);
-      expect(allText).toContain("...");
-    });
-
-    it("should not truncate features under MAX_FEATURE_LENGTH", () => {
-      const shortFeature = "Short feature under limit";
-      expect(shortFeature.length).toBeLessThan(MAX_FEATURE_LENGTH);
-
-      const features = [shortFeature, "Another", "Third"];
-      const result = formatTweets(version, features, releaseUrl);
-
-      const allText = result.tweets.join(" ");
-      expect(allText).toContain(`• ${shortFeature}`);
-    });
-  });
-
-  describe("empty features handling", () => {
-    it("should handle empty features array gracefully", () => {
-      const features: string[] = [];
-      const counts = { bugFixes: 2, docs: 0, chores: 1 };
-      const result = formatTweets(version, features, releaseUrl, counts);
-
-      expect(result.tweets).toHaveLength(1);
-      expect(result.tweets[0]).toContain("Codex 0.92 is out.");
-      expect(result.tweets[0]).toContain("2 bug fixes");
-      expect(result.tweets[0]).toContain(releaseUrl);
-    });
-
-    it("should show minor updates when no counts", () => {
-      const result = formatTweets(version, [], releaseUrl);
-
-      expect(result.tweets[0]).toContain("Minor updates.");
-    });
-  });
-
-  describe("URL placement", () => {
-    it("should include URL in single tweet", () => {
-      const features = ["Feature 1"];
-      const result = formatTweets(version, features, releaseUrl);
-
-      expect(result.tweets).toHaveLength(1);
-      expect(result.tweets[0]).toContain(releaseUrl);
-    });
-
-    it("should include URL in last tweet of thread", () => {
-      const features = Array(8)
-        .fill(null)
-        .map((_, i) => `Feature ${i + 1} with a longer description that takes up more space`);
-      const result = formatTweets(version, features, releaseUrl);
-
-      expect(result.tweets.length).toBeGreaterThan(1);
-
-      // URL should only be in the last tweet
-      const lastTweet = result.tweets[result.tweets.length - 1];
-      expect(lastTweet).toContain(releaseUrl);
-
-      // URL should not be in earlier tweets (except summary doesn't have it)
-      for (let i = 1; i < result.tweets.length - 1; i++) {
-        expect(result.tweets[i]).not.toContain(releaseUrl);
-      }
-    });
-
-    it("should always include URL regardless of thread length", () => {
-      for (const count of [0, 1, 5, 10, 20]) {
-        const features = Array(count)
-          .fill(null)
-          .map((_, i) => `Feature ${i + 1}`);
-        const result = formatTweets(version, features, releaseUrl);
-
-        const allText = result.tweets.join(" ");
-        expect(allText).toContain(releaseUrl);
-      }
-    });
-  });
-
-  describe("thread structure", () => {
-    it("should start first tweet with summary", () => {
+    it("should never truncate features with 'X more...'", () => {
       const features = Array(10)
         .fill(null)
         .map((_, i) => `Feature ${i + 1}`);
       const result = formatTweets(version, features, releaseUrl);
 
-      expect(result.tweets[0]).toMatch(/^Codex [\d.]+ is out\./);
-      expect(result.tweets[0]).toContain("Details in thread");
+      const allText = result.tweets.join(" ");
+      expect(allText).not.toContain("more...");
+      // All features should be present
+      for (let i = 1; i <= 10; i++) {
+        expect(allText).toContain(`Feature ${i}`);
+      }
+    });
+
+    it("should split features across tweets if needed", () => {
+      const features = Array(20)
+        .fill(null)
+        .map((_, i) => `This is feature number ${i + 1} with some extra description text`);
+      const result = formatTweets(version, features, releaseUrl);
+
+      const featureTweets = result.tweets.filter(
+        (t) => t.startsWith("Features:") || t.startsWith("Features (cont.):")
+      );
+      expect(featureTweets.length).toBeGreaterThan(1);
+    });
+  });
+
+  describe("other categories", () => {
+    it("should truncate bug fixes after 4 items", () => {
+      const features = ["Feature 1"];
+      const items = {
+        bugFixes: Array(10)
+          .fill(null)
+          .map((_, i) => `Bug fix ${i + 1}`),
+        docs: [],
+        chores: [],
+      };
+      const result = formatTweets(version, features, releaseUrl, items);
+
+      const allText = result.tweets.join(" ");
+      expect(allText).toContain("Bug Fixes:");
+      expect(allText).toContain("6 more...");
+    });
+
+    it("should combine small categories into one tweet", () => {
+      const features = ["Feature 1"];
+      const items = {
+        bugFixes: ["Fix 1"],
+        docs: ["Doc 1"],
+        chores: ["Chore 1"],
+      };
+      const result = formatTweets(version, features, releaseUrl, items);
+
+      // Should have: title, features, combined categories, CTA = 4 tweets
+      // Or potentially fewer if combined further
+      const categoriesTweet = result.tweets.find(
+        (t) => t.includes("Bug Fixes:") && t.includes("Docs:") && t.includes("Chores:")
+      );
+      expect(categoriesTweet).toBeDefined();
+    });
+
+    it("should separate categories if they exceed 800 chars combined", () => {
+      const features = ["Feature 1"];
+      const items = {
+        bugFixes: Array(4)
+          .fill(null)
+          .map((_, i) => `This is a longer bug fix description number ${i + 1} that takes up more space`),
+        docs: Array(4)
+          .fill(null)
+          .map((_, i) => `This is a longer doc description number ${i + 1} that takes up more space`),
+        chores: [],
+      };
+      const result = formatTweets(version, features, releaseUrl, items);
+
+      // Bug fixes and docs should be in separate tweets due to length
+      const bugFixTweet = result.tweets.find((t) => t.includes("Bug Fixes:"));
+      const docsTweet = result.tweets.find((t) => t.includes("Docs:"));
+      expect(bugFixTweet).toBeDefined();
+      expect(docsTweet).toBeDefined();
+    });
+  });
+
+  describe("empty handling", () => {
+    it("should handle empty features array", () => {
+      const items = {
+        bugFixes: ["Fix 1", "Fix 2"],
+        docs: [],
+        chores: ["Chore 1"],
+      };
+      const result = formatTweets(version, [], releaseUrl, items);
+
+      expect(result.tweets[0]).toContain("Codex 0.92 is out.");
+      expect(result.tweets[0]).toContain("2 bug fixes");
+      expect(result.tweets[0]).not.toContain("feature");
+    });
+
+    it("should show minor updates when no content", () => {
+      const result = formatTweets(version, [], releaseUrl);
+
+      expect(result.tweets[0]).toContain("Minor updates.");
     });
   });
 
@@ -193,6 +166,30 @@ describe("formatTweets", () => {
     it("should keep patch version if not .0", () => {
       const result = formatTweets("0.92.1", ["Feature"], releaseUrl);
       expect(result.tweets[0]).toContain("Codex 0.92.1 is out.");
+    });
+  });
+
+  describe("tweet length constraints", () => {
+    it("should never exceed MAX_TWEET_LENGTH in any tweet", () => {
+      const features = Array(30)
+        .fill(null)
+        .map((_, i) => `This is feature number ${i + 1} with extra text to make it longer`);
+      const items = {
+        bugFixes: Array(20)
+          .fill(null)
+          .map((_, i) => `Bug fix ${i + 1} with description`),
+        docs: Array(10)
+          .fill(null)
+          .map((_, i) => `Doc ${i + 1}`),
+        chores: Array(10)
+          .fill(null)
+          .map((_, i) => `Chore ${i + 1}`),
+      };
+      const result = formatTweets(version, features, releaseUrl, items);
+
+      for (const tweet of result.tweets) {
+        expect(tweet.length).toBeLessThanOrEqual(MAX_TWEET_LENGTH);
+      }
     });
   });
 });

@@ -1,9 +1,9 @@
 export interface ParsedRelease {
-  features: string[]; // Clean feature descriptions
-  bugFixes: number;   // Count of bug fixes
-  docs: number;       // Count of documentation changes
-  chores: number;     // Count of chores
-  raw: string;        // Original section content
+  features: string[];  // Clean feature descriptions
+  bugFixes: string[];  // Bug fix descriptions
+  docs: string[];      // Documentation change descriptions
+  chores: string[];    // Chore descriptions
+  raw: string;         // Original section content
 }
 
 /**
@@ -19,27 +19,44 @@ function cleanFeature(text: string): string {
 }
 
 /**
- * Counts list items in an HTML section.
+ * Extracts list items from an HTML section.
  */
-function countHtmlSectionItems(body: string, sectionName: string): number {
+function extractHtmlSectionItems(body: string, sectionName: string): string[] {
   const regex = new RegExp(`<h2[^>]*>${sectionName}<\\/h2>([\\s\\S]*?)(?=<h2|$)`, 'i');
   const match = body.match(regex);
-  if (!match) return 0;
+  if (!match) return [];
 
-  const items = match[1].match(/<li[^>]*>/gi);
-  return items?.length ?? 0;
+  const items: string[] = [];
+  const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+  let liMatch;
+  while ((liMatch = liRegex.exec(match[1])) !== null) {
+    const item = cleanFeature(liMatch[1]);
+    if (item) {
+      items.push(item);
+    }
+  }
+  return items;
 }
 
 /**
- * Counts list items in a markdown section.
+ * Extracts list items from a markdown section.
  */
-function countMarkdownSectionItems(body: string, sectionName: string): number {
+function extractMarkdownSectionItems(body: string, sectionName: string): string[] {
   const regex = new RegExp(`## ${sectionName}[^\\S\\n]*\\n([\\s\\S]*?)(?=\\n## |$)`, 'i');
   const match = body.match(regex);
-  if (!match) return 0;
+  if (!match) return [];
 
-  const lines = match[1].split('\n');
-  return lines.filter(l => l.trim().startsWith('- ') || l.trim().startsWith('* ')).length;
+  const items: string[] = [];
+  for (const line of match[1].split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      const item = cleanFeature(trimmed.slice(2));
+      if (item) {
+        items.push(item);
+      }
+    }
+  }
+  return items;
 }
 
 /**
@@ -70,9 +87,9 @@ function parseMarkdown(body: string): ParsedRelease | null {
 
   return {
     features,
-    bugFixes: countMarkdownSectionItems(body, 'Bug Fixes'),
-    docs: countMarkdownSectionItems(body, 'Documentation'),
-    chores: countMarkdownSectionItems(body, 'Chores'),
+    bugFixes: extractMarkdownSectionItems(body, 'Bug Fixes'),
+    docs: extractMarkdownSectionItems(body, 'Documentation'),
+    chores: extractMarkdownSectionItems(body, 'Chores'),
     raw,
   };
 }
@@ -106,9 +123,9 @@ function parseHtml(body: string): ParsedRelease | null {
 
   return {
     features,
-    bugFixes: countHtmlSectionItems(body, 'Bug Fixes'),
-    docs: countHtmlSectionItems(body, 'Documentation'),
-    chores: countHtmlSectionItems(body, 'Chores'),
+    bugFixes: extractHtmlSectionItems(body, 'Bug Fixes'),
+    docs: extractHtmlSectionItems(body, 'Documentation'),
+    chores: extractHtmlSectionItems(body, 'Chores'),
     raw,
   };
 }
@@ -130,5 +147,5 @@ export function parseNewFeatures(releaseBody: string): ParsedRelease {
     return mdResult;
   }
 
-  return { features: [], bugFixes: 0, docs: 0, chores: 0, raw: '' };
+  return { features: [], bugFixes: [], docs: [], chores: [], raw: '' };
 }
