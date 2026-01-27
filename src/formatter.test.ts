@@ -168,21 +168,6 @@ describe("formatTweets", () => {
   });
 
   describe("thread structure", () => {
-    it("should include numbering in thread tweets", () => {
-      const features = Array(8)
-        .fill(null)
-        .map((_, i) => `Feature ${i + 1} with a longer description that takes up more space`);
-      const result = formatTweets(version, features, releaseUrl);
-
-      expect(result.tweets.length).toBeGreaterThan(1);
-
-      // All tweets should have (X/Y) numbering
-      const total = result.tweets.length;
-      for (let i = 0; i < total; i++) {
-        expect(result.tweets[i]).toContain(`(${i + 1}/${total})`);
-      }
-    });
-
     it("should start first tweet with summary", () => {
       const features = Array(10)
         .fill(null)

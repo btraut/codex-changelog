@@ -63,13 +63,11 @@ export function formatTweets(
 
   // Need to create a thread
   const urlLine = buildUrlLine(releaseUrl);
-  const numberingSuffix = " (XX/XX)"; // 8 chars placeholder
 
-  // Build tweet contents without numbering first
-  const tweetContents: string[] = [];
+  const tweets: string[] = [];
 
   // First tweet: summary
-  tweetContents.push(buildSummaryTweet(version, truncatedFeatures.length));
+  tweets.push(buildSummaryTweet(version, truncatedFeatures.length));
 
   let remainingFeatures = [...truncatedFeatures];
 
@@ -78,10 +76,10 @@ export function formatTweets(
   while (remainingFeatures.length > 0) {
     // Check if remaining features + URL can fit in one tweet (this would be the last tweet)
     const remainingFeatureLines = remainingFeatures.map((f) => `• ${f}`).join("\n");
-    const lastTweetCandidate = `${remainingFeatureLines}\n\n${urlLine}${numberingSuffix}`;
+    const lastTweetCandidate = `${remainingFeatureLines}\n\n${urlLine}`;
 
     if (lastTweetCandidate.length <= MAX_TWEET_LENGTH) {
-      tweetContents.push(`${remainingFeatureLines}\n\n${urlLine}`);
+      tweets.push(lastTweetCandidate);
       footerAdded = true;
       break;
     }
@@ -93,7 +91,7 @@ export function formatTweets(
       const currentLines = featuresInTweet.length > 0
         ? featuresInTweet.map((f) => `• ${f}`).join("\n") + "\n"
         : "";
-      const testContent = `${currentLines}${featureLine}${numberingSuffix}`;
+      const testContent = `${currentLines}${featureLine}`;
 
       if (testContent.length <= MAX_TWEET_LENGTH) {
         featuresInTweet.push(feature);
@@ -104,26 +102,20 @@ export function formatTweets(
 
     if (featuresInTweet.length > 0) {
       const featureLines = featuresInTweet.map((f) => `• ${f}`).join("\n");
-      tweetContents.push(featureLines);
+      tweets.push(featureLines);
       remainingFeatures = remainingFeatures.slice(featuresInTweet.length);
     } else {
       // Edge case: single feature is too long even alone
       const featureLine = `• ${remainingFeatures[0]}`;
-      tweetContents.push(featureLine);
+      tweets.push(featureLine);
       remainingFeatures = remainingFeatures.slice(1);
     }
   }
 
   // If we exited the loop without adding footer, add it as final tweet
   if (!footerAdded) {
-    tweetContents.push(urlLine);
+    tweets.push(urlLine);
   }
-
-  // Now add numbering to each tweet
-  const totalTweets = tweetContents.length;
-  const tweets = tweetContents.map((content, i) => {
-    return `${content} (${i + 1}/${totalTweets})`;
-  });
 
   return { tweets };
 }
