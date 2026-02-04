@@ -123,6 +123,21 @@ describe("parseNewFeatures", () => {
     ]);
   });
 
+  it("decodes HTML entities inside list items", () => {
+    const htmlBody = `<h2>New Features</h2>
+<ul>
+<li>Added codex app &lt;path&gt; on macOS (#123)</li>
+<li>Escaped ampersand &amp; quotes &quot;here&quot; (#456)</li>
+</ul>`;
+
+    const result = parseNewFeatures(htmlBody);
+
+    expect(result.features).toEqual([
+      "Added codex app <path> on macOS",
+      "Escaped ampersand & quotes \"here\"",
+    ]);
+  });
+
   it("returns empty for HTML without New Features section", () => {
     const htmlBody = `<h2>Bug Fixes</h2>
 <ul><li>Fixed a bug</li></ul>`;

@@ -1,3 +1,5 @@
+import { decodeHtmlEntities } from './html.js';
+
 export interface Release {
   version: string;      // e.g., '0.92.0'
   title: string;        // e.g., 'Codex CLI Release: 0.92.0'
@@ -7,19 +9,6 @@ export interface Release {
 }
 
 const RSS_URL = 'https://developers.openai.com/changelog/rss.xml';
-
-/**
- * Decodes HTML entities in a string.
- */
-function decodeHtmlEntities(text: string): string {
-  return text
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'");
-}
 
 function extractVersion(title: string): string | null {
   // Match "Codex CLI Release: X.Y.Z" or similar patterns

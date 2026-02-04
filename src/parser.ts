@@ -1,3 +1,5 @@
+import { decodeHtmlEntities } from './html.js';
+
 export interface ParsedRelease {
   features: string[];  // Clean feature descriptions
   bugFixes: string[];  // Bug fix descriptions
@@ -10,8 +12,9 @@ export interface ParsedRelease {
  * Cleans a feature string by removing HTML tags, PR references, and trimming.
  */
 function cleanFeature(text: string): string {
-  return text
-    .replace(/<[^>]+>/g, '') // Remove HTML tags first
+  const withoutTags = text.replace(/<[^>]+>/g, ''); // Remove HTML tags first
+  const decoded = decodeHtmlEntities(withoutTags);
+  return decoded
     .replace(/\s*\(#\d+(?:,\s*#\d+)*\)\s*/g, '') // Then remove PR refs like (#1234) or (#1234, #5678)
     .replace(/\s*\(#\d+\)\s*/g, '') // Catch any remaining single PR refs
     .replace(/\s+/g, ' ') // Normalize whitespace
