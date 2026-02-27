@@ -10,6 +10,15 @@ export interface Release {
 
 const RSS_URL = 'https://developers.openai.com/codex/changelog/rss.xml';
 
+async function fetchRssXml(fetchFn: typeof fetch): Promise<string> {
+  const response = await fetchFn(RSS_URL);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Codex RSS feed (${response.status} ${response.statusText})`);
+  }
+
+  return response.text();
+}
+
 function extractVersion(title: string): string | null {
   // Match "Codex CLI Release: X.Y.Z" or similar patterns
   const match = title.match(/Codex.*?(\d+\.\d+\.\d+)/i);
@@ -62,33 +71,15 @@ function parseRssItems(xml: string): Release[] {
 }
 
 export async function getLatestRelease(fetchFn: typeof fetch = fetch): Promise<Release | null> {
-  try {
-    const response = await fetchFn(RSS_URL);
-    if (!response.ok) {
-      return null;
-    }
+  const xml = await fetchRssXml(fetchFn);
+  const releases = parseRssItems(xml);
 
-    const xml = await response.text();
-    const releases = parseRssItems(xml);
-
-    return releases[0] ?? null;
-  } catch {
-    return null;
-  }
+  return releases[0] ?? null;
 }
 
 export async function getAllReleases(fetchFn: typeof fetch = fetch): Promise<Release[]> {
-  try {
-    const response = await fetchFn(RSS_URL);
-    if (!response.ok) {
-      return [];
-    }
-
-    const xml = await response.text();
-    return parseRssItems(xml);
-  } catch {
-    return [];
-  }
+  const xml = await fetchRssXml(fetchFn);
+  return parseRssItems(xml);
 }
 
 /**
