@@ -8,7 +8,7 @@ export interface Release {
   publishedAt: string;  // ISO date string
 }
 
-const RSS_URL = 'https://developers.openai.com/changelog/rss.xml';
+const RSS_URL = 'https://developers.openai.com/codex/changelog/rss.xml';
 
 function extractVersion(title: string): string | null {
   // Match "Codex CLI Release: X.Y.Z" or similar patterns
