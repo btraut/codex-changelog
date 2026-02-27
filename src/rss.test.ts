@@ -145,21 +145,20 @@ describe('getLatestRelease', () => {
     expect(release?.title).toBe('Codex CLI Release: 0.92.0');
   });
 
-  it('returns null on fetch error', async () => {
+  it('throws on fetch error', async () => {
     const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'));
-
-    const release = await getLatestRelease(mockFetch);
-    expect(release).toBeNull();
+    await expect(getLatestRelease(mockFetch)).rejects.toThrow('Network error');
   });
 
-  it('returns null on non-ok response', async () => {
+  it('throws on non-ok response', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 404,
+      statusText: 'Not Found',
     });
-
-    const release = await getLatestRelease(mockFetch);
-    expect(release).toBeNull();
+    await expect(getLatestRelease(mockFetch)).rejects.toThrow(
+      'Failed to fetch Codex RSS feed (404 Not Found)'
+    );
   });
 
   it('returns null when no Codex releases in feed', async () => {
