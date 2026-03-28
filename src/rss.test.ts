@@ -36,14 +36,13 @@ describe('extractVersion', () => {
     expect(extractVersion('Codex CLI Release: 0.92.0')).toBe('0.92.0');
   });
 
-  it('extracts version with different formats', () => {
-    expect(extractVersion('Codex Release 1.0.0')).toBe('1.0.0');
-    expect(extractVersion('Codex v2.1.3')).toBe('2.1.3');
-  });
-
   it('returns null for non-Codex titles', () => {
     expect(extractVersion('GPT-4 Update')).toBe(null);
     expect(extractVersion('API Changes')).toBe(null);
+  });
+
+  it('returns null for non-CLI Codex titles', () => {
+    expect(extractVersion('Codex app 26.325.31654')).toBe(null);
   });
 
   it('returns null for titles without version', () => {

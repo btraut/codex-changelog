@@ -8,6 +8,12 @@ export interface SectionItems {
   chores: string[];
 }
 
+export interface DigestEntry {
+  label: string;
+  version: string;
+  url: string;
+}
+
 export const MAX_TWEET_LENGTH = 4000;  // X Premium limit
 export const MAX_FEATURE_LENGTH = 500; // No practical truncation
 const TARGET_TWEET_LENGTH = 800;       // Preferred max for combining/splitting
@@ -232,4 +238,25 @@ export function formatTweets(
   tweets.push(buildCtaTweet(releaseUrl));
 
   return { tweets };
+}
+
+export function formatDigestTweet(entries: DigestEntry[]): string {
+  if (entries.length === 0) {
+    throw new Error('Cannot format digest tweet without entries');
+  }
+
+  const lines = ["Today's Codex update:"];
+
+  for (const entry of entries) {
+    lines.push('');
+    lines.push(`${entry.label}: ${entry.version}`);
+    lines.push(entry.url);
+  }
+
+  const tweet = lines.join('\n');
+  if (tweet.length > MAX_TWEET_LENGTH) {
+    throw new Error(`Digest tweet exceeds max length (${tweet.length} > ${MAX_TWEET_LENGTH})`);
+  }
+
+  return tweet;
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  formatDigestTweet,
   formatTweets,
   MAX_TWEET_LENGTH,
   MAX_FEATURE_LENGTH,
@@ -191,5 +192,26 @@ describe("formatTweets", () => {
         expect(tweet.length).toBeLessThanOrEqual(MAX_TWEET_LENGTH);
       }
     });
+  });
+});
+
+describe("formatDigestTweet", () => {
+  it("formats a combined daily digest with inline links per item", () => {
+    const tweet = formatDigestTweet([
+      {
+        label: "Desktop app",
+        version: "26.325.31654",
+        url: "https://developers.openai.com/codex/changelog/",
+      },
+      {
+        label: "VS Code",
+        version: "26.5325.31654",
+        url: "https://marketplace.visualstudio.com/items?itemName=openai.chatgpt",
+      },
+    ]);
+
+    expect(tweet).toContain("Today's Codex update:");
+    expect(tweet).toContain("Desktop app: 26.325.31654");
+    expect(tweet).toContain("VS Code: 26.5325.31654");
   });
 });
