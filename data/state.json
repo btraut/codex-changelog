@@ -10,11 +10,11 @@
   },
   "vscode": {
     "lastSeenVersion": "26.5401.11717",
-    "pendingDigestVersion": "26.5401.11717",
-    "pendingDigestUrl": "https://marketplace.visualstudio.com/items?itemName=openai.chatgpt",
-    "pendingDigestDate": "2026-04-01"
+    "pendingDigestVersion": null,
+    "pendingDigestUrl": null,
+    "pendingDigestDate": null
   },
   "digest": {
-    "lastPostedDate": "2026-03-29"
+    "lastPostedDate": "2026-04-02"
   }
 }
