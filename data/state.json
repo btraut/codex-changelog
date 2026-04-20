@@ -3,16 +3,16 @@
     "lastPostedVersion": "0.121.0"
   },
   "desktop": {
-    "lastSeenVersion": "26.415.40636",
-    "pendingDigestVersion": null,
-    "pendingDigestUrl": null,
-    "pendingDigestDate": null
+    "lastSeenVersion": "26.417.40842",
+    "pendingDigestVersion": "26.417.40842",
+    "pendingDigestUrl": "https://developers.openai.com/codex/changelog/",
+    "pendingDigestDate": "2026-04-20"
   },
   "vscode": {
-    "lastSeenVersion": "26.5415.20818",
-    "pendingDigestVersion": null,
-    "pendingDigestUrl": null,
-    "pendingDigestDate": null
+    "lastSeenVersion": "26.5417.40842",
+    "pendingDigestVersion": "26.5417.40842",
+    "pendingDigestUrl": "https://marketplace.visualstudio.com/items?itemName=openai.chatgpt",
+    "pendingDigestDate": "2026-04-20"
   },
   "digest": {
     "lastPostedDate": "2026-04-19"
