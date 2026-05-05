@@ -3,10 +3,10 @@
     "lastPostedVersion": "0.128.0"
   },
   "desktop": {
-    "lastSeenVersion": "26.429.30905",
-    "pendingDigestVersion": null,
-    "pendingDigestUrl": null,
-    "pendingDigestDate": null
+    "lastSeenVersion": "26.429.61741",
+    "pendingDigestVersion": "26.429.61741",
+    "pendingDigestUrl": "https://developers.openai.com/codex/changelog/",
+    "pendingDigestDate": "2026-05-05"
   },
   "vscode": {
     "lastSeenVersion": "26.5429.30905",
