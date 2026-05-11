@@ -7,6 +7,7 @@ import { clearPendingDigest, queueDigestUpdate, readState, writeState, type BotS
 import { createTwitterClient, postThread } from './twitter.js';
 
 const DRY_RUN = process.env.DRY_RUN === 'true';
+const POST_TO_X = process.env.POST_TO_X === 'true';
 const BACKFILL = process.env.BACKFILL === 'true';
 const POST_DIGEST = process.env.POST_DIGEST === 'true';
 const DIGEST_TIME_ZONE = 'America/Denver';
@@ -68,6 +69,19 @@ async function postRelease(
       console.log('');
     });
     console.log('=== END DRY RUN ===\n');
+    return;
+  } else if (!POST_TO_X) {
+    console.log('\n=== POSTING DISABLED ===');
+    console.log('POST_TO_X is not set to true, so no tweets were posted.');
+    console.log('Would post the following tweets:\n');
+    tweets.forEach((tweet, i) => {
+      console.log(`--- Tweet ${i + 1} (${tweet.length} chars) ---`);
+      console.log(tweet);
+      console.log('');
+    });
+    console.log('State file was not updated.');
+    console.log('=== END POSTING DISABLED ===\n');
+    return;
   } else {
     // Post to Twitter
     console.log('Posting to Twitter...');
@@ -141,6 +155,14 @@ async function maybePostDigest(
     console.log('Would post the following digest tweet:\n');
     console.log(digestTweet);
     console.log('\n=== END DRY RUN ===\n');
+  } else if (!POST_TO_X) {
+    console.log('\n=== POSTING DISABLED ===');
+    console.log('POST_TO_X is not set to true, so no digest tweet was posted.');
+    console.log('Would post the following digest tweet:\n');
+    console.log(digestTweet);
+    console.log('\nDigest state was not updated.');
+    console.log('=== END POSTING DISABLED ===\n');
+    return;
   } else {
     console.log('Posting digest to Twitter...');
     const twitterClient = client ?? createTwitterClient();
@@ -175,13 +197,13 @@ async function main(): Promise<void> {
 
     console.log(`Found ${releases.length} release(s) to backfill: ${releases.map(r => r.version).join(', ')}`);
 
-    const client = DRY_RUN ? undefined : createTwitterClient();
+    const client = DRY_RUN || !POST_TO_X ? undefined : createTwitterClient();
 
     for (const release of releases) {
       await postRelease(release, state, client);
 
       // Small delay between posts to avoid rate limiting
-      if (!DRY_RUN && releases.indexOf(release) < releases.length - 1) {
+      if (!DRY_RUN && POST_TO_X && releases.indexOf(release) < releases.length - 1) {
         console.log('Waiting 5 seconds before next post...');
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
@@ -206,9 +228,11 @@ async function main(): Promise<void> {
   }
 
   await syncDigestSources(state, digestDate);
-  writeState(state, { dryRun: DRY_RUN });
+  writeState(state, { dryRun: DRY_RUN || !POST_TO_X });
   if (DRY_RUN) {
     console.log('Dry run: skipped persisting synced source state');
+  } else if (!POST_TO_X) {
+    console.log('Posting disabled: skipped persisting synced source state');
   }
 
   if (POST_DIGEST) {

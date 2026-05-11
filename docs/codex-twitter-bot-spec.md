@@ -1,8 +1,10 @@
 # Codex Changelog Twitter Bot
 
+This bot is archived. Scheduled posting is disabled, and runtime posting requires `POST_TO_X=true`.
+
 ## Overview
 
-A Twitter/X bot that automatically posts whenever a new stable version of OpenAI Codex is released, extracting and sharing the "New Features" section from the release notes.
+An archived Twitter/X bot that can detect new stable versions of OpenAI Codex and preview release update threads from the release notes.
 
 **Target Twitter account:** TBD (you'll create this)
 **Source:** GitHub releases at `openai/codex`
